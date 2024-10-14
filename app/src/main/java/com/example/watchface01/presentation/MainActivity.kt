@@ -65,8 +65,7 @@ fun WearApp(greetingName: String) {
     }
 }
 
-
-
+// Add time display
 
 @Composable
 fun TimeDisplay() {
