@@ -7,6 +7,7 @@ package com.example.watchface01.presentation
 
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -40,9 +41,12 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,18 +54,24 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        setTheme(android.R.style.Theme_DeviceDefault)
+
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
 
         setContent {
             WearApp("Android")
         }
     }
+
+
 }
 
 @Composable
 fun WearApp(greetingName: String) {
     WatchFace01Theme {
-        WearAppUI(city = "Guadalajara")
+        WearAppUI(city = "Inverness")
     }
 }
 
@@ -76,20 +86,45 @@ fun TimeDisplay() {
         }
     }
 
-    val formatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    // Format the time to separate hours and minutes
+    val hourFormatter = remember { DateTimeFormatter.ofPattern("HH") }
+    val minuteFormatter = remember { DateTimeFormatter.ofPattern("mm") }
 
-    WearText(
-        text = currentTime.format(formatter),
-        style = TimeTextDefaults.timeTextStyle(
-            fontSize = 50.sp
-        ),
-        color = MaterialTheme.colors.primary
-    )
+    Column(
+        modifier = Modifier
+            .offset(x = 20.dp)
+            .wrapContentWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally, // Center align hour and minute
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Display the hour
+        WearText(
+            text = currentTime.format(hourFormatter),
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.ExtraBold,
+            style = TimeTextDefaults.timeTextStyle(
+                fontSize = 50.sp // Large font for hour
+            ),
+            color = Color(0xFF00D9FF)
+        )
+        // Display the minute
+        WearText(
+            text = currentTime.format(minuteFormatter),
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.ExtraBold,
+            style = TimeTextDefaults.timeTextStyle(
+                fontSize = 40.sp // Smaller font for minute
+            ),
+            color = Color.White
+        )
+    }
 }
 
 @Composable
 fun WeatherDisplay(city: String) {
     var weatherState by remember { mutableStateOf<WeatherState>(WeatherState.Loading) }
+    val currentDate by remember { mutableStateOf(LocalDate.now()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM d") } // Date format like Tue, Oct 16
 
     LaunchedEffect(city) {
         weatherState = try {
@@ -106,7 +141,7 @@ fun WeatherDisplay(city: String) {
 
     when (val state = weatherState) {
         is WeatherState.Loading -> LoadingView()
-        is WeatherState.Success -> WeatherContent(state)
+        is WeatherState.Success -> WeatherContent(state, currentDate.format(dateFormatter))
         is WeatherState.Error -> ErrorView(state.message)
     }
 }
@@ -122,31 +157,69 @@ private fun LoadingView() {
 }
 
 @Composable
-private fun WeatherContent(state: WeatherState.Success) {
-    Surface(
+private fun WeatherContent(state: WeatherState.Success, formattedDate: String) {
+    Row(
         modifier = Modifier.padding(16.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.1f)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        // Time on the left (assuming this stays unchanged)
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start
+        ) {
+            // Your time content here
+        }
+
+        // Date and Weather on the Right
+        Column(
+            modifier = Modifier.padding(start = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            WeatherIcon(state.condition)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Date
             WearText(
-                text = "${state.temperature.toInt()}°F",
-                style = MaterialTheme.typography.title2,
-                color = MaterialTheme.colors.primary
+                text = formattedDate,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colors.onBackground
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row for weather icon and temperature next to each other
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                // Weather Icon on the left
+                WeatherIcon(state.condition)
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Temperature on the right of the icon
+                WearText(
+                    text = "${state.temperature.toInt()}°F",
+                    style = MaterialTheme.typography.title2,
+                    color = MaterialTheme.colors.primary
+                )
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
+
+            // Weather Condition Text below the row
             WearText(
                 text = state.condition,
-                style = MaterialTheme.typography.body1
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.body1,
+                color = MaterialTheme.colors.onBackground
             )
         }
     }
 }
+
+
 
 @Composable
 private fun ErrorView(message: String) {
@@ -211,16 +284,21 @@ fun WearAppUI(
             PositionIndicator(scalingLazyListState = scrollState)
         }
     ) {
-        ScalingLazyColumn(
-            modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            state = scrollState
+        Row(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            item { TimeDisplay() }
-            item { WeatherDisplay(city = city) }
-            item { BatteryStatus() }
-            item { StepCounter() }
+            // Time on the left
+            TimeDisplay()
+
+            // Spacer to adjust the layout
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Weather on the right
+            WeatherDisplay(city = city)
         }
     }
 }
@@ -258,7 +336,7 @@ suspend fun getStepCount(): Int = withContext(Dispatchers.IO) {
     5000 // Placeholder
 }
 
-@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = false)
 @Composable
 fun DefaultPreview() {
     WearApp("Preview Android")
