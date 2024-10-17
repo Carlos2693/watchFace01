@@ -123,36 +123,27 @@ private fun LoadingView() {
 
 @Composable
 private fun WeatherContent(state: WeatherState.Success) {
-    ScalingLazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.surface),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.padding(16.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.1f)
     ) {
-        item {
-            Surface(
-                modifier = Modifier.padding(16.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.1f)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    WeatherIcon(state.condition)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    WearText(
-                        text = "${state.temperature.toInt()}°F",
-                        style = MaterialTheme.typography.title2,
-                        color = MaterialTheme.colors.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    WearText(
-                        text = state.condition,
-                        style = MaterialTheme.typography.body1
-                    )
-                }
-            }
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            WeatherIcon(state.condition)
+            Spacer(modifier = Modifier.height(8.dp))
+            WearText(
+                text = "${state.temperature.toInt()}°F",
+                style = MaterialTheme.typography.title2,
+                color = MaterialTheme.colors.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            WearText(
+                text = state.condition,
+                style = MaterialTheme.typography.body1
+            )
         }
     }
 }
